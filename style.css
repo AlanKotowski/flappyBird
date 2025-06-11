@@ -1,0 +1,25 @@
+*{
+    background-color: black;
+
+}
+
+#canvas{
+    background-color: black;
+    border: 1px solid white;
+    position: absolute;
+    top: 50px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+#resBut, #startBut{
+    display: none;
+    color: white;
+    height: 40px;
+    border: 1px solid white;
+    position: absolute;
+    top: 470px;
+    left: 50%;
+    transform: translateX(-50%);
+    cursor: pointer;
+} 
