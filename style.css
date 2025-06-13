@@ -1,10 +1,10 @@
 *{
     background-color: black;
-
+    font-family: 'Pixelify Sans';
+    
 }
 
 #canvas{
-    background-color: black;
     border: 1px solid white;
     position: absolute;
     top: 50px;
@@ -12,14 +12,37 @@
     transform: translateX(-50%);
 }
 
+
 #resBut, #startBut{
     display: none;
     color: white;
+    border-radius: 7px;
+    background-color: orangered;
+    border: 3px solid white;
+    outline: 2px solid black;
     height: 40px;
-    border: 1px solid white;
     position: absolute;
     top: 470px;
     left: 50%;
     transform: translateX(-50%);
     cursor: pointer;
 } 
+
+#pauseButton{
+    position: relative;
+    display: block;
+    border: 1px solid black;
+    width: 20px;
+    height: 20px;
+    top: 50px;
+    left: 50%;
+    transform: translateX(-880%);
+}
+
+.pause {
+    background-image: url(images/pauseButton.png);
+}
+
+.play {
+    background-image: url(images/playButton.png);
+}
