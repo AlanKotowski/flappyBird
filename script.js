@@ -13,18 +13,47 @@
   let points = 0;
   let pauseGame = true;
   let newGame = true;
-  let gameover = " NEW GAME";
+  let gameover = "NEW GAME";
   let instructions = false;
   let birdFly = false;
   let deathPoint = false;
   let noMove = false;
+  let birdImage = new Image();
+  let birdImage2 = new Image();
+  let wallImage = new Image();
+  let backgroundImage = new Image();
+  let flappyLogo = new Image();
+  let getReady = new Image();
+  let gameOverImg = new Image();
+  let medal = new Image();
+  let bronze = new Image();
+  let silver = new Image();
+  let gold = new Image();
+  let platinum = new Image();
+  let isKeyDown = false;
 
-  // BIRD
+  // load all images
+  function loadImages() {
+    birdImage.src = "images/bird.png";
+    birdImage2.src = "images/bird2.png";
+    wallImage.src = "images/wall.png";
+    backgroundImage.src = "images/background.png";
+    flappyLogo.src = "images/flappyLogo.png";
+    getReady.src = "images/getReady.png";
+    gameOverImg.src = "images/gameOverImg.png";
+    medal.src = "images/medal.png";
+    bronze.src = "images/bronze.png";
+    silver.src = "images/silver.png";
+    gold.src = "images/gold.png";
+    platinum.src = "images/platinum.png";
+  }
+
   // random number generator with variable max value
   function randomH(value) {
     return Math.floor(Math.random() * value);
   }
 
+  // BIRD
   // bird creation
   function makeBird(birdLength) {
     for (let i = 0; i < birdLength; i++) {
@@ -57,29 +86,30 @@
 
   // bird jump & grav reset
   function birdJump() {
-    if (pauseGame == true && !noMove) pauseGame = false;
+    if (gameover === "GAME OVER") return;
+    if (pauseGame && instructions) {
+      pauseGame = false;
+      instructions = false;
+    }
+    if (pauseGame) {
+      if (instructions) {
+        instructions = false;
+        pauseGame = false;
+      }
+      return;
+    }
     gravVelocity = 0;
     birdGrav(0, 0);
-    instructions = false;
-    if (!noMove) flySound();
+    flySound();
   }
 
   // bird wings animation
   function birdWingsAnimation(h, w) {
+    if (!birdImage.complete || !birdImage2.complete) return;
     if (!birdFly) {
-      const birdImage = new Image();
-      birdImage.src = "images/bird.png";
       context2d.drawImage(birdImage, h, w, birdPixH, birdPixW);
-      setTimeout(() => {
-        birdFly = true;
-      }, 150);
     } else {
-      const birdImage2 = new Image();
-      birdImage2.src = "images/bird2.png";
       context2d.drawImage(birdImage2, h, w, birdPixH, birdPixW);
-      setTimeout(() => {
-        birdFly = false;
-      }, 150);
     }
   }
 
@@ -88,17 +118,15 @@
   function makeWalls(size) {
     for (let i = 0; i < size; i++) {
       let rand = randomH(450);
-      headX = canvas.width + i * num;
-      headY = canvas.height - rand;
-      wall.push({ x: headX, y: headY });
+      let headX = canvas.width + i * num;
+      let headY = canvas.height - rand;
+      wall.push({ x: headX, y: headY, counted: false });
     }
   }
 
   // walls draw on canvas
   function drawWalls() {
     wall.forEach(function (el) {
-      const wallImage = new Image();
-      wallImage.src = "images/wall.png";
       context2d.drawImage(wallImage, el.x, el.y, wallX, wallY);
       context2d.drawImage(wallImage, el.x, el.y - 700, wallX, wallY);
     });
@@ -107,17 +135,16 @@
   // walls movement
   function moveWalls(dx, dy) {
     for (let i = 0; i < wall.length; i++) {
-      headX = wall[i].x + dx;
-      headY = wall[i].y + dy;
+      wall[i].x += dx;
+      wall[i].y += dy;
     }
-    wall.unshift({ x: headX, y: headY });
-    wall.pop();
   }
 
   // walls iteration (recycled walls)
   function wallsRecycle() {
     for (let i = 0; i < wall.length; i++) {
       if (wall[i].x < -wallX) {
+        wall[i].counted = false;
         wall[i].x += canvas.width + wallX + 150;
         wall[i].y = canvas.height - randomH(450);
       }
@@ -127,9 +154,9 @@
   // adding points when bird goes through the gap && game over after bird collision with walls
   function wallsCollision() {
     for (let i = 0; i < wall.length; i++) {
-      if (wall[i].x + wallX === bird[0].x) {
-        points = points + 1;
-        console.log(points / 2);
+      if (!wall[i].counted && wall[i].x + wallX < bird[0].x) {
+        points += 1;
+        wall[i].counted = true;
         pointSound();
       } else if (
         (wall[i].x < bird[0].x &&
@@ -166,93 +193,83 @@
     context2d.font = "20px Pixelify Sans";
     context2d.strokeStyle = "black";
     context2d.lineWidth = 3;
-    context2d.strokeText("Points: " + points / 2, 150, 20);
+    context2d.strokeText("Points: " + points, 150, 20);
     context2d.fillStyle = "white";
-    context2d.fillText("Points: " + points / 2, 150, 20);
+    context2d.fillText("Points: " + points, 150, 20);
   }
 
   // best score holder
-  function bestPoints() {
-    bp < points ? (bp = points) : (bp = bp);
-    return bp;
+  function loadBestPoints() {
+    const storeBestScore = localStorage.getItem("bestScore");
+    if (storeBestScore !== null) {
+      bp = parseInt(storeBestScore);
+    }
   }
-  // new game screen
 
+  function updateBestPoints() {
+    if (points > bp) {
+      bp = points;
+      localStorage.setItem("bestScore", bp);
+    }
+  }
+
+  // new game screen
   function startGame() {
     if (pauseGame) {
-      const flappyLogo = new Image();
-      flappyLogo.src = "images/flappyLogo.png";
-      context2d.drawImage(
-        flappyLogo,
-        canvas.width / 8,
-        canvas.height / 3,
-        flappyLogo.width / 15,
-        flappyLogo.height / 15
-      );
-
+      context2d.drawImage(flappyLogo, canvas.width / 8, canvas.height / 3, flappyLogo.width / 15, flappyLogo.height / 15);
       birdWingsAnimation(canvas.width - 85, canvas.height / 2.8);
-
       document.getElementById("startBut").style.display = "block";
     }
-
     document.getElementById("startBut").addEventListener("mousedown", () => {
-      instructions = true;
       newGame = false;
+      instructions = true;
+      pauseGame = true;
       document.getElementById("startBut").style.display = "none";
     });
+
     canvas.addEventListener("mousedown", () => {
-      newGame = false;
-      document.getElementById("startBut").style.display = "none";
+      if (gameover === "GAME OVER") return;
+      if (newGame) return;
+      if (pauseGame && !instructions) {
+        instructions = true;
+        newGame = false;
+        document.getElementById("startBut").style.display = "none";
+      } else if (pauseGame && instructions) {
+        pauseGame = false;
+        instructions = false;
+      }
     });
   }
 
   // how to play instruction screen
   function instructionsScreen() {
     flyingEnabled();
-    const getReady = new Image();
-    getReady.src = "images/getReady.png";
     context2d.drawImage(getReady, canvas.width / 4, canvas.height / 3);
   }
 
   // score reward system on 10/20/50/100 points
   function medals() {
-    if (points / 2 < 10) {
-      const medal = new Image();
-      medal.src = "images/medal.png";
+    if (points < 10) {
       context2d.drawImage(medal, 120, 285, medal.height / 2, medal.width / 2);
-    } else if (points / 2 >= 10 && points / 2 <= 19) {
-      const bronze = new Image();
-      bronze.src = "images/bronze.png";
-      context2d.drawImage(
-        bronze,
-        120,
-        285,
-        bronze.height / 2,
-        bronze.width / 2
-      );
-    } else if (points / 2 >= 20 && points / 2 <= 49) {
-      const silver = new Image();
-      silver.src = "images/silver.png";
+    } else if (points >= 10 && points <= 19) {
+      context2d.drawImage(bronze, 120, 285, bronze.height / 2, bronze.width / 2);
+    } else if (points >= 20 && points <= 49) {
       context2d.drawImage(silver, 120, 285, silver.height, silver.width);
-    } else if (points / 2 >= 50 && points / 2 <= 99) {
-      const gold = new Image();
-      gold.src = "images/gold.png";
+    } else if (points >= 50 && points <= 99) {
       context2d.drawImage(gold, 120, 285, gold.height / 2, gold.width / 2);
-    } else if (points / 2 >= 100) {
-      const platinum = new Image();
-      platinum.src = "images/platinum.png";
+    } else if (points >= 100) {
       context2d.drawImage(platinum, 120, 285, platinum.height, platinum.width);
     }
   }
 
   //game over screen
   function gameOver() {
+    updateBestPoints();
     pauseGame = true;
     deathPoint = false;
     flyingDisabled();
+    instructions = false;
 
-    const gameOverImg = new Image();
-    gameOverImg.src = "images/gameOverImg.png";
     context2d.drawImage(gameOverImg, canvas.height / 10, canvas.width / 2.5);
 
     context2d.beginPath();
@@ -272,7 +289,7 @@
 
     context2d.font = "20px Pixelify Sans";
     context2d.fillStyle = "black";
-    context2d.fillText(points / 2, 300, 295);
+    context2d.fillText(points, 300, 295);
 
     context2d.font = "20px Pixelify Sans";
     context2d.fillStyle = "black";
@@ -280,20 +297,20 @@
 
     context2d.font = "20px Pixelify Sans";
     context2d.fillStyle = "black";
-    context2d.fillText(bp / 2, 300, 345);
+    context2d.fillText(Math.floor(bp), 300, 345);
 
     medals();
+    gameover = "GAME OVER";
   }
 
   // pause game function
   function paused() {
+    if (gameover === "GAME OVER") return;
     if (!pauseGame) {
-      console.log("pauza");
       pauseGame = true;
       noMove = true;
       document.getElementById("pauseButton").classList.add("play");
     } else {
-      console.log("niepauza");
       pauseGame = false;
       noMove = false;
       document.getElementById("pauseButton").classList.remove("play");
@@ -309,12 +326,13 @@
     pauseGame = true;
     points = 0;
     document.getElementById("resBut").style.display = "none";
+    gameover = "NEW GAME";
+    instructions = false;
+    deathPoint = false;
   }
 
   // game frames
   function frame() {
-    const backgroundImage = new Image();
-    backgroundImage.src = "images/background.png";
     context2d.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
   }
 
@@ -324,6 +342,7 @@
     const point = new Audio("SFX/point.mp3");
     point.play();
   }
+
   // sound after bird & walls collistion
   function deathSound() {
     const death = new Audio("SFX/death.mp3");
@@ -340,12 +359,38 @@
 
   //flying mechanics
   //adding event listener for flying
-  function flyingEnabled() {
-    canvas.addEventListener("mousedown", birdJump);
+  function onKeyDown(e) {
+    if (e.code === "Space" && !isKeyDown && gameOver !== "GAME OVER") {
+      birdJump();
+      isKeyDown = true;
+      instructions = false;
+    }
   }
+
+  function onKeyUp(e) {
+    if (e.code === "Space") {
+      isKeyDown = false;
+    }
+  }
+
+  function flyingEnabled() {
+    document.addEventListener("keydown", onKeyDown);
+    document.addEventListener("keyup", onKeyUp);
+    canvas.addEventListener("mousedown", onMouseClick);
+  }
+
+  function onMouseClick() {
+    if (gameover !== "GAME OVER") {
+      birdJump();
+    }
+  }
+
   //removing event listener for flying
   function flyingDisabled() {
     canvas.removeEventListener("mousedown", birdJump);
+    document.removeEventListener("keydown", (e) => {
+      if (e.code === "space") birdJump();
+    });
   }
 
   // APP
@@ -353,6 +398,11 @@
   function startApp() {
     canvas = document.getElementById("canvas");
     context2d = canvas.getContext("2d");
+    loadBestPoints();
+    loadImages();
+    setInterval(() => {
+      birdFly = !birdFly;
+    }, 150);
 
     flyingEnabled();
     document.getElementById("resBut").addEventListener("mousedown", resetGame);
@@ -367,10 +417,9 @@
     setInterval(() => {
       frame();
       drawWalls();
-      if (!pauseGame) moveWalls(-2, 0);
+      if (!pauseGame) moveWalls(-1, 0);
       wallsRecycle();
       drawBird();
-      bestPoints();
       wallsCollision();
       if (!pauseGame) grav();
       if (newGame) startGame();
